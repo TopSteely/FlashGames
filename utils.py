@@ -83,11 +83,11 @@ def one_episode(policy):
     for i_c,c in enumerate(cards[1:]):
         action = policy.next_action(state)
         state_new = step(state, action, c)
-        #reward = get_reward_from_state(state_new)
-        #policy.update_policy_online(state, state_new, action, reward)
+        reward = get_reward_from_state(state_new)
+        policy.update_policy_online(state, state_new, action, reward)
         state = state_new
-    reward = get_reward_from_state(state_new)
-    policy.update_policy_online(state, state_new, action, reward)
+    #reward = get_reward_from_state(state_new)
+    #policy.update_policy_online(state, state_new, action, reward)
     return get_reward_from_state(state_new)
 
 

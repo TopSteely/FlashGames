@@ -1,3 +1,6 @@
 - no colors
 - remaining cards -> state
 	- change signature
+- remaining cards in numpy array: [number of aces, number of twos, number of threes.....]
+- reinforcement learning don't reward instant moves, but after one episode -> youtube?
+q-values grow to inf
