@@ -16,8 +16,8 @@ from draw_step import *
 left = 56
 up = 88
 
-grab_images = False
-learn_classifier = True
+grab_images = True
+learn_classifier = False
 online = True
 learn_game = False
 
@@ -99,7 +99,6 @@ def main():
 			#read images
 			imgs = []
 			for i in range(52):
-				#img = cv2.imread("cards/%s.jpg"%str(i))
 				img = misc.imread("cards/%s.jpg"%str(i),mode='L')
 				imgs.append(img.flatten())
 			print 'gathered'
@@ -127,13 +126,14 @@ def main():
 			pyautogui.click()
 			time.sleep(0.1)
 		if grab_images:
+			time.sleep(1)
 			for i in range(52):
 				im=ImageGrab.grab(bbox=(348 + left,212 + up,418 + left,308 + up)) # X1,Y1,X2,Y2
 
-				im.save("cards/%s.jpg"%str(i))
+				im.save("catch22/%s.jpg"%str(i))
 				pyautogui.moveTo(488 + left, 250 + up)
 				pyautogui.click()
-				time.sleep(1)
+				time.sleep(0.4)
 
 		if learn_game:
 			Q_Learning_simulation(1000000, 10000)
