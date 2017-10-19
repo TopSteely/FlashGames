@@ -1,3 +1,5 @@
+#webrownus
+
 #from selenium import webdriver
 
 #from pyvirtualdisplay import Display
@@ -31,18 +33,19 @@ learn_classifier = False
 online = False
 gather_stacksize = False
 gather_cards = True
-sleep_time = 0.9# 0.4 seems to be too fast sometimes
+sleep_time_draw = 0.4# 0.4 seems to be too fast sometimes
+sleep_time_stack = 0.3
 
 debug_show = False
 
 counter_draws = 0
 
-three_draw = False
+three_draw = True
 
 if three_draw:
 	div = 3.0
 	dontplay59 = False
-	stop_crit = 2
+	stop_crit = 1
 else:
 	div = 1.0
 	dontplay59 = True
@@ -147,6 +150,49 @@ def next_card_protected(aces,stacks,c):
 		return True
 	return False
 
+def playable(play_card, stacks, aces):
+	if [play_card[0] - 1, play_card[1]] in [x for b in aces.values() for x in b]:
+		print 'playable in ace'
+		return True
+	if [play_card[0] + 1,otherscolor(play_card[1])[0]] in [x[-1] for x in stacks.values()] or [play_card[0] + 1,otherscolor(play_card[1])[0]] in [x[-1] for x in stacks.values()]:
+		print 'playable in stacks'
+		return True
+	return False
+
+def play_to_free(play_card, stacks, aces, sts, num_cards):
+	print 'in play'
+	if [play_card[0] - 1, play_card[1]] in [x for b in aces.values() for x in b]:
+		#find play_card
+		stack_ind = [ix for ix,b in enumerate(stacks.values()) for x in b if x == play_card][0]
+		ind = stacks[stack_ind].index(play_card)
+		sts, aces, num_cards, stacks = click_(sts,stack_ind, aces, play_card, num_cards, stacks)
+		return sts, aces, num_cards, stacks
+
+	if [play_card[0] + 1,otherscolor(play_card[1])[0]] in [x[-1] for x in stacks.values()] or [play_card[0] + 1,otherscolor(play_card[1])[0]] in [x[-1] for x in stacks.values()]:
+		print 'playable in stacks'
+		exit(-1)
+def click_(sts,stck_i, aces, card, num_cards, stack_cards):
+	if sts[stck_i] < 0:
+		tmp = 0
+	else:
+		tmp = sts[stck_i]
+	print 'in click', tmp, num_cards[stck_i]
+	pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*tmp + up + 10)
+	pyautogui.click()
+	time.sleep(0.1)
+	pyautogui.click()
+	time.sleep(0.4)
+	click = False
+	moved = True
+
+	#find color and add
+	aces[[x[0] for x in aces.values()].index([1,card[1]])].append(card)
+	#remove from stack
+	del stack_cards[stck_i][-1]
+	num_cards[stck_i] -= 1
+	if num_cards[stck_i] == 0:
+		sts[stck_i] -= 1
+	return sts, aces, num_cards, stack_cards
 
 def main():
 	try:
@@ -154,7 +200,7 @@ def main():
 		#pyautogui.click()
 		counter_card_gods_of_odds = 13
 		counter_stacksize = 22
-		counter_cards = 183
+		counter_cards = 185
 		counter_draws = 0
 		counter_whenace = 0
 		counter_second = 0
@@ -181,8 +227,8 @@ def main():
 					plt.show()
 					raw_input()
 				imgs_cards.append(img[2:,:-4].flatten())
-			labels_cards = [1,7,2,13,8,6,8,12,10,13,2,7,12,4,9,8,7,10,4,9,6,8,9,3,7,12,11,9,11,13,13,7,12,11,3,5,6,13,5,4,10,3,11,8,6,2,5,13,7,12,8,3,11,1,6,11,6,13,12,8,7,13,4,6,3,1,5,2,2,4,3,12,7,6,9,5,8,1,13,3,12,9,5,11,7,10,9,3,7,9,8,1,8,12,10,4,5,6,11,13,6,7,2,7,10,6,13,4,9,12,13,10,3,5,10,9,9,11,8,8,12,10,6,5,4,12,13,6,2,7,2,5,4,11,5,9,8,4,5,6,11,13,6,7,9,10,11,6,2,5,6,1,8,1,7,2,13,8,6,8,2,7,10,6,13,4,9,11,8,1,4,10,5,7,6,3,7,9,3,5,11,8,13]
-			labels_color = [h,s,s,d,h,s,c,c,h,h,h,h,d,d,s,s,c,d,h,d,d,c,h,s,s,c,s,s,h,h,d,h,h,s,s,h,c,d,c,c,d,c,d,s,s,d,s,s,d,d,s,c,c,s,s,s,h,s,h,s,h,h,h,s,h,h,s,s,h,c,h,s,h,c,h,d,s,h,c,s,h,s,d,c,h,s,d,s,c,s,c,c,d,h,h,d,d,h,s,h,s,d,s,h,s,c,d,c,h,s,d,s,c,d,h,s,c,s,h,c,h,h,s,h,c,s,h,d,c,c,c,c,s,d,h,c,h,d,d,h,s,h,s,d,d,h,s,h,d,h,c,d,d,h,s,s,d,h,s,c,s,h,s,c,d,c,h,h,c,h,d,c,h,d,s,d,d,c,c,h,h,h,c]
+			labels_cards = [1,7,2,13,8,6,8,12,10,13,2,7,12,4,9,8,7,10,4,9,6,8,9,3,7,12,11,9,11,13,13,7,12,11,3,5,6,13,5,4,10,3,11,8,6,2,5,13,7,12,8,3,11,1,6,11,6,13,12,8,7,13,4,6,3,1,5,2,2,4,3,12,7,6,9,5,8,1,13,3,12,9,5,11,7,10,9,3,7,9,8,1,8,12,10,4,5,6,11,13,6,7,2,7,10,6,13,4,9,12,13,10,3,5,10,9,9,11,8,8,12,10,6,5,4,12,13,6,2,7,2,5,4,11,5,9,8,4,5,6,11,13,6,7,9,10,11,6,2,5,6,1,8,1,7,2,13,8,6,8,2,7,10,6,13,4,9,11,8,1,4,10,5,7,6,3,7,9,3,5,11,8,13,13,13]
+			labels_color = [h,s,s,d,h,s,c,c,h,h,h,h,d,d,s,s,c,d,h,d,d,c,h,s,s,c,s,s,h,h,d,h,h,s,s,h,c,d,c,c,d,c,d,s,s,d,s,s,d,d,s,c,c,s,s,s,h,s,h,s,h,h,h,s,h,h,s,s,h,c,h,s,h,c,h,d,s,h,c,s,h,s,d,c,h,s,d,s,c,s,c,c,d,h,h,d,d,h,s,h,s,d,s,h,s,c,d,c,h,s,d,s,c,d,h,s,c,s,h,c,h,h,s,h,c,s,h,d,c,c,c,c,s,d,h,c,h,d,d,h,s,h,s,d,d,h,s,h,d,h,c,d,d,h,s,s,d,h,s,c,s,h,s,c,d,c,h,h,c,h,d,c,h,d,s,d,d,c,c,h,h,h,c,d,s]
 			print len(labels_cards), len(labels_color)
 			clf_cards.fit(imgs_cards,labels_cards)
 			clf_color.fit(imgs_cards,labels_color)
@@ -233,7 +279,7 @@ def main():
 		cards_seen = 0
 		draw_cards_used = 0
 
-		
+		continue_to_draw = False
 
 		while True:
 			#strategy
@@ -255,14 +301,12 @@ def main():
 				card = stack_cards[stck_i][0]
 
 				all_cards = [x for b in stack_cards.values() for x in b]
-				if card[0] == 2:
-					print '!!!!!!!!!!!!!!!'
-					print [x[0] for x in aces.values()]
-					print [1,card[1]] in [x[0] for x in aces.values()]
 				#print sts, stack_cards
 				if num_cards[stck_i] == 0:
+					print 'thats why! 1'
 					pass
 				elif card[0] == 1:
+					print 'thats why! 2'
 					pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*sts[stck_i] + up + 10)
 					pyautogui.click()
 					time.sleep(0.1)
@@ -271,7 +315,7 @@ def main():
 					num_aces += 1
 					sts[stck_i] -= 1
 					if sts[stck_i] >= 0:
-						time.sleep(sleep_time)
+						time.sleep(sleep_time_stack)
 						im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
 						img = im.convert('L')
 						img = np.asarray(img)
@@ -286,7 +330,8 @@ def main():
 					moved = True
 					click = False
 				elif card[0] == 2 and [1,card[1]] in [x[0] for x in aces.values()]:
-					print 'in cards[0]==2'
+					print 'thats why! 3'
+					print 'in cards[0]==2', card
 					pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*sts[stck_i] + up + 10)
 					pyautogui.click()
 					time.sleep(0.1)
@@ -298,7 +343,7 @@ def main():
 					#remove from stack
 					#changed from 0 to 1, confirm?
 					if sts[stck_i] >= 0:
-						time.sleep(sleep_time)
+						time.sleep(sleep_time_stack)
 						im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
 						img = im.convert('L')
 						img = np.asarray(img)
@@ -316,7 +361,43 @@ def main():
 
 					moved = True
 					click = False
-				elif [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and num_cards[stck_i] == 1:
+				elif sts[stck_i] == 0 and 13 not in for_king:
+					print 'thats why! 4'
+					pass
+				elif card[0] == 13 and sts[stck_i] <= 0:
+					print 'thats why! 5'
+					#don't move king to another empty field
+					print 'not moving king'
+					pass
+				elif card[0] + 1 in just_numbers and (sts[stck_i] > 0 or (13 in for_king and any([sts[ki]>0 for ki,xtthr in enumerate(for_king) if xtthr==13]))):
+					print 'thats why! 6'
+					indices = [ir for ir, x in enumerate(just_numbers) if x == card[0] + 1]
+					for ic in indices:
+						if othercolor(card[1],stack_cards[ic][-1][1]):
+							drag(stck_i,ic,sts,num_cards)
+							stack_cards[ic].extend(stack_cards[stck_i])
+							num_cards[ic] += len(stack_cards[stck_i])
+							sts[stck_i] -= 1
+
+							if sts[stck_i] >= 0:
+								time.sleep(sleep_time_stack)
+								im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
+								img = im.convert('L')
+								img = np.asarray(img)
+								im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
+								stack_cards[stck_i] = [[clf_cards.predict(img[2:,:-4].flatten().reshape(1, -1))[0], clf_color.predict(img[2:,:-4].flatten().reshape(1, -1))[0]]]
+								np.savetxt("solitaire/debug/second2%s.txt"%str(counter_second), [stack_cards[stck_i]], fmt='%s')
+								num_cards[stck_i] = 1
+								counter_second += 1
+							else:
+								stack_cards[stck_i] = [[14,'a']]
+								num_cards[stck_i] = 0
+
+							moved = True
+							click = False
+							break
+				if not moved and [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and num_cards[stck_i] == 1:
+					print 'are we going here? 1111'
 					pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*sts[stck_i] + up + 10)
 					pyautogui.click()
 					time.sleep(0.1)
@@ -328,7 +409,7 @@ def main():
 					#remove from stack
 					#changed from 0 to 1, confirm?
 					if sts[stck_i] >= 0:
-						time.sleep(sleep_time)
+						time.sleep(sleep_time_stack)
 						im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
 						img = im.convert('L')
 						img = np.asarray(img)
@@ -346,8 +427,8 @@ def main():
 
 					moved = True
 					click = False
-				elif [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and [card[0],othersymbolsamecolor(card[1])] in all_cards and num_cards[stck_i] == 1:
-					print 'does this ever happen?'
+				elif not moved and [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and [card[0],othersymbolsamecolor(card[1])] in all_cards and num_cards[stck_i] == 1:
+					print 'does this ever happen?' #no
 					exit()
 					for ix in stack_cards:
 						if [card[0],othersymbolsamecolor(card[1])] in stack_cards[ix]:
@@ -363,7 +444,7 @@ def main():
 						del stack_cards[ix][ind+1:]
 						moved = True
 						click = False
-				elif [card[0] - 1,othersymbolsamecolor(card[1])] in [x[-1] for x in aces.values()] and [card[0],othersymbolsamecolor(card[1])] in all_cards and num_cards[stck_i] != 1:
+				elif not moved and [card[0] - 1,othersymbolsamecolor(card[1])] in [x[-1] for x in aces.values()] and [card[0],othersymbolsamecolor(card[1])] in all_cards and num_cards[stck_i] == 1 and sts[stck_i] > 0:
 					print card, [card[0] - 1,othersymbolsamecolor(card[1])], [card[0],othersymbolsamecolor(card[1])]
 					for ix in stack_cards:
 						if [card[0],othersymbolsamecolor(card[1])] in stack_cards[ix]:
@@ -372,56 +453,31 @@ def main():
 					if ind+1 > num_cards[ix]:
 						pass
 					else:
-						print 'dragging ', stack_cards[ix][ind+1:],' from ', ix, ' to ', stack_cards[stck_i], ' to free ', card
-						drag(ix,stck_i, sts, num_cards, ind + 1)
-						stack_cards[stck_i].extend(stack_cards[ix][ind+1:])
-						num_cards[stck_i] += len(stack_cards[ix][ind+1:])
-						num_cards[ix] -= len(stack_cards[ix][ind+1:])
-						del stack_cards[ix][ind+1:]
+						#TODO!!!!!
 
+
+						#first
 						pyautogui.moveTo((ix*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[ix]-1) + 4*sts[ix] + up + 10)
 						pyautogui.click()
 						time.sleep(0.1)
 						pyautogui.click()
 						num_cards[ix] -= 1
+						if num_cards[ix] == 0:
+							stack_cards[ix] = [[14,'a']]
+
+						#then
+						#print 'dragging ', stack_cards[ix][ind+1:],' from ', ix, ' to ', stack_cards[stck_i], ' to free ', card
+						#drag(stck_i, ix, sts, num_cards, ind + 1)
+						#stack_cards[stck_i].extend(stack_cards[ix][ind+1:])
+						#num_cards[stck_i] += len(stack_cards[ix][ind+1:])
+						#num_cards[ix] -= len(stack_cards[ix][ind+1:])
+						#del stack_cards[ix][ind+1:]
 
 						moved = True
 						click = False
 
-						print 'done?'
-						exit()
-				elif sts[stck_i] == 0 and 13 not in for_king:
-					pass
-				elif card[0] == 13 and sts[stck_i] <= 0:
-					#don't move king to another empty field
-					print 'not moving king'
-					pass
-				elif card[0] + 1 in just_numbers and (sts[stck_i] > 0 or (13 in for_king and any([sts[ki]>0 for ki,xtthr in enumerate(for_king) if xtthr==13]))):
-					indices = [ir for ir, x in enumerate(just_numbers) if x == card[0] + 1]
-					for ic in indices:
-						if othercolor(card[1],stack_cards[ic][-1][1]):
-							drag(stck_i,ic,sts,num_cards)
-							stack_cards[ic].extend(stack_cards[stck_i])
-							num_cards[ic] += len(stack_cards[stck_i])
-							sts[stck_i] -= 1
-
-							if sts[stck_i] >= 0:
-								time.sleep(sleep_time)
-								im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
-								img = im.convert('L')
-								img = np.asarray(img)
-								im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
-								stack_cards[stck_i] = [[clf_cards.predict(img[2:,:-4].flatten().reshape(1, -1))[0], clf_color.predict(img[2:,:-4].flatten().reshape(1, -1))[0]]]
-								np.savetxt("solitaire/debug/second2%s.txt"%str(counter_second), [stack_cards[stck_i]], fmt='%s')
-								num_cards[stck_i] = 1
-								counter_second += 1
-							else:
-								stack_cards[stck_i] = [[14,'a']]
-								num_cards[stck_i] = 0
-
-							moved = True
-							click = False
-							break
+						#print 'done?'
+						#exit()
 
 				card = stack_cards[stck_i][-1]
 				if card[0] == 2 and [1,card[1]] in [x[0] for x in aces.values()] and num_cards[stck_i] != 1:
@@ -446,50 +502,120 @@ def main():
 					click = False
 					moved = True
 
-				if next_card_protected(aces,stack_cards,card) and [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and num_cards[stck_i] != 1:
+				if not moved and next_card_protected(aces,stack_cards,card) and [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and num_cards[stck_i] != 1:
 					print 'in if next_card_protected', card
 					print sts, num_cards
-					#raw_input()
-					if sts[stck_i] < 0:
-						tmp = 0
-					else:
-						tmp = sts[stck_i]
-					pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*tmp + up + 10)
-					pyautogui.click()
-					time.sleep(0.1)
-					pyautogui.click()
-					time.sleep(0.4)
+					if all([x<=0 for x in sts]):
+						print 'now we should just play draw_cards!, right?'
+						continue_to_draw = True
+					if not continue_to_draw:
+						if sts[stck_i] < 0:
+							tmp = 0
+						else:
+							tmp = sts[stck_i]
+						pyautogui.moveTo((stck_i*(card_width+stack_)) + 337 + left + 10,268 + 22 * (num_cards[stck_i]-1) + 4*tmp + up + 10)
+						pyautogui.click()
+						time.sleep(0.1)
+						pyautogui.click()
+						time.sleep(0.4)
+						click = False
+						moved = True
 
-					#find color and add
-					aces[[x[0] for x in aces.values()].index([1,card[1]])].append(card)
-					#remove from stack
-					del stack_cards[stck_i][-1]
-					num_cards[stck_i] -= 1
-					if num_cards[stck_i] == 0:
-						sts[stck_i] -= 1
-					
-					end_moved = True
-					if sts[stck_i] >= 0 and num_cards[stck_i] == 0:
-						time.sleep(sleep_time)
-						im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
-						img = im.convert('L')
-						img = np.asarray(img)
-						im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
-						stack_cards[stck_i] = [[clf_cards.predict(img[2:,:-4].flatten().reshape(1, -1))[0], clf_color.predict(img[2:,:-4].flatten().reshape(1, -1))[0]]]
-						np.savetxt("solitaire/debug/second2%s.txt"%str(counter_second), [stack_cards[stck_i]], fmt='%s')
-						num_cards[stck_i] = 1
-						counter_second += 1
-					print 'in last: ', num_cards[stck_i], stack_cards
-					if num_cards[stck_i] == 0:
-						stack_cards[stck_i] = [[14,'a']]
-						#num_cards[i] = 0
+						print 'did this go well?'
 
-				if moved:
-					i = 6
+						#find color and add
+						aces[[x[0] for x in aces.values()].index([1,card[1]])].append(card)
+						#remove from stack
+						del stack_cards[stck_i][-1]
+						num_cards[stck_i] -= 1
+						if num_cards[stck_i] == 0:
+							sts[stck_i] -= 1
+						
+						end_moved = True
+						if sts[stck_i] >= 0 and num_cards[stck_i] == 0:
+							time.sleep(sleep_time_stack)
+							im=ImageGrab.grab(bbox=((stck_i*(card_width+stack_)) + 337 + left,268 + 4*sts[stck_i] + up,(stck_i*(card_width+stack_))+337 + card_width + left,4*sts[stck_i] + 268 + card_height + up))
+							img = im.convert('L')
+							img = np.asarray(img)
+							im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
+							stack_cards[stck_i] = [[clf_cards.predict(img[2:,:-4].flatten().reshape(1, -1))[0], clf_color.predict(img[2:,:-4].flatten().reshape(1, -1))[0]]]
+							np.savetxt("solitaire/debug/second2%s.txt"%str(counter_second), [stack_cards[stck_i]], fmt='%s')
+							num_cards[stck_i] = 1
+							counter_second += 1
+						print 'in last: ', num_cards[stck_i], stack_cards
+						if num_cards[stck_i] == 0:
+							stack_cards[stck_i] = [[14,'a']]
+							#num_cards[i] = 0
+
+				if not moved and not continue_to_draw and [2,card[1]] in [x for b in aces.values() for x in b] and sts[stck_i] > 0:#and num_cards[stck_i] == 1
+					print 'is this not all true? ', card, [card[0] - 1,card[1]], [card[0] - 1,card[1]] in [x[-1] for x in aces.values()], num_cards[stck_i] == 1, [card[0] - 1,card[1]] in [x[-1] for x in aces.values()] and num_cards[stck_i] == 1
+					print 'card, stck_i', card, stck_i, stack_cards[stck_i]
+					for stack_card in stack_cards[stck_i]:
+						# check if it's possible to free downcard by bringing in between cards to foundation
+						# find highest card of that suit on foundation
+						if [1,stack_card[1]] in [x for b in aces.values() for x in b]:
+							ind = [ix for ix,b in enumerate(aces.values()) for x in b if x == [1,stack_card[1]]][0]
+							highest = aces.values()[ind][-1]
+
+							play_all = True
+							print card, 'to check: ', range(highest[0]+1,stack_card[0]),len(range(highest[0]+1,stack_card[0])),len(range(highest[0]+1,stack_card[0]))==0
+							if len(range(highest[0]+1,stack_card[0])) == 0:
+								print 'should just put it on top?'
+								print 'should never go here'
+								print card, stack_card, range(highest[0]+1,stack_card[0])
+								exit()
+							else:
+								for xx in range(highest[0]+1,stack_card[0]):
+									# in other stacks?
+									print 'looking for ', [xx, stack_card[1]], [xx, stack_card[1]] in all_cards
+									if [xx, stack_card[1]] in all_cards:
+										# find card
+										print '1', [b for ix,b in enumerate(stack_cards.values())]
+										print ' ', [xx, stack_card[1]]
+										stack_ind = [ix for ix,b in enumerate(stack_cards.values()) for x in b if x == [xx, stack_card[1]]][0]
+										print '2', stack_ind, [xx,stack_card[1]], stack_cards[stack_ind], stack_cards[stack_ind].index([xx,stack_card[1]])
+										ind = stack_cards[stack_ind].index([xx,stack_card[1]])
+										print '3', xx, stack_ind, ind
+										# what has to be done to free 
+										for car in stack_cards[stack_ind][ind:]:
+											print car
+											if not playable(car, stack_cards, aces):
+												play_all = False
+												break
+									else:
+										play_all = False
+									if not play_all:
+										break
+						else:
+							play_all = False
+						print 'play all?', card, play_all
+						if not play_all:
+								break
+						#raw_input()
+					if play_all:
+						print 'possible to play all!', range(highest[0]+1,card[0])
+						raw_input()
+						for xx in range(highest[0]+1,card[0]):
+							print 'playing all, ', xx, card[0]
+							print [ix for ix,b in enumerate(stack_cards.values()) for x in b if x == [xx, card[1]]]
+							stack_ind = [ix for ix,b in enumerate(stack_cards.values()) for x in b if x == [xx, card[1]]][0]
+							ind = stack_cards[stack_ind].index([xx,card[1]])
+							print 'card', xx, stack_ind, ind
+							for car in stack_cards[stack_ind][ind:]:
+									sts, aces, num_cards, stack_cards = play_to_free(car, stack_cards, aces, sts, num_cards)
+						raw_input()
+						click = False
+						moved = True
+
+				if continue_to_draw:
+					i = -1
 				else:
-					i -= 1
+					if moved:
+						i = 6
+					else:
+						i -= 1
 
-			while not moved:
+			while not moved and remaining_draw_cards_tmp > 0:
 				if click or (triples == 0 and draw_cards == 0) or (cards_seen==draw_cards_used and cards_seen!=0):
 					pyautogui.moveTo(810 + left, 180 + up)
 					pyautogui.click()
@@ -509,7 +635,7 @@ def main():
 						#print s
 						#tex.insert(tk.END, s)
 						#tex.see(tk.END)
-						time.sleep(sleep_time)
+						time.sleep(sleep_time_draw)
 						
 					elif math.floor((remaining_draw_cards-1)/div) == triples-1:
 						time.sleep(0.32)
@@ -529,12 +655,19 @@ def main():
 						#tex.insert(tk.END, s)
 						#tex.see(tk.END)
 						not_moved = True
-						time.sleep(sleep_time)
+						time.sleep(sleep_time_draw)
 				card, counter_draws = draw_card(clf_cards,clf_color,draw_cards, counter_draws)
 				print card
-				if rounds == 0 and card not in history:
-					print history
+				if card == [2, 'd']:
+					time.sleep(sleep_time_draw)
+					card, counter_draws = draw_card(clf_cards,clf_color,draw_cards, counter_draws)
+				if rounds == 0 and card not in history and not three_draw:
 					history.append(card)
+					print history
+				elif card not in history and three_draw:
+					
+					history.append(card)
+					print 'h: ', history
 
 				just_numbers = [x[-1][0] for x in stack_cards.values()]
 				if card[0] == 1:
@@ -573,28 +706,34 @@ def main():
 						draw_cards -= 1
 					history.remove(card)
 				elif card[0] == 13:
-					print '111', history,card
 					all_false = True
-					indices = [ir for ir, x in enumerate(just_numbers) if x == card[0] + 1]
 					#are there any queens?
-					indices_queens = [ir for ir, x in enumerate(just_numbers) if x == 12]
-					indices_empty = [ir for ir, x in enumerate(just_numbers) if x == 14]
+					indices_queens = [ir for ir, x in enumerate(stack_cards.values()) if x[0][0] == 12]
+					indices_empty = [ir for ir, x in enumerate(stack_cards.values()) if x[0][0] == 14]
 					#queen with the most hidden cards
 					sorted_sts = [j[0] for j in sorted(enumerate(sts), key=lambda x:x[1])]
+					print 'queens: ', indices_queens
 					if indices_queens != []:
-						for xx in sorted_sts:
-							if xx in indices_queens:
-								queen_ind = xx
-								break
-						if othercolor(card,stack_cards[queen_ind][0]) or len(indices_empty) >= 2:
-							play = True
-							print queen_ind, history
-						else:
-							if [13,otherscolor(stack_cards[queen_ind][0][1])] in history or (rounds == 0 and cards_seen<24):
-								click = True
-								play = False
-							else:
+						if len(indices_queens)>1 and othercolor(stack_cards[indices_queens[0]][0][1],stack_cards[indices_queens[1]][0][1]):
 								play = True
+						elif len(indices_queens) > 2:
+								play = True
+						else: 
+							queen_inds = []
+							for xx in sorted_sts:
+								if xx in indices_queens:
+									queen_inds.append(xx)
+							play = True
+							for queen_ind in queen_inds:
+								if othercolor(card[1],stack_cards[queen_ind][0][1]) or len(indices_empty) >= 2:
+									print 'play'
+								else:
+									if [13,otherscolor(stack_cards[queen_ind][0][1])[0]] in history or [13,otherscolor(stack_cards[queen_ind][0][1])[1]] in history or (rounds == 0 and cards_seen<24):
+										click = True
+										play = False
+										print ' dont play', [13,otherscolor(stack_cards[queen_ind][0][1])[0]] in history, [13,otherscolor(stack_cards[queen_ind][0][1])[1]] in history, (rounds == 0 and cards_seen<24)
+						if any(x<=0 for x in num_cards):
+							play = True
 					else:
 						play = True
 					print play, click, moved, indices_queens
@@ -809,10 +948,14 @@ def main():
 						if draw_cards != 0:
 							draw_cards -= 1
 						history.remove(card)
+				if all([x<=0 for x in sts]):
+					print 'should we stay in draw?'
+					#raw_input()
 
 				#print 'end of loop: ', math.floor((remaining_draw_cards-1)/3.0), triples, math.floor((remaining_draw_cards-1)/3.0) == triples
 				#time.sleep(sleep_time)
 
+				dra_card = card
 				if math.floor((remaining_draw_cards-1)/div) == triples:
 					s = 'moved: ', moved, ' not moved: ',not_moved, no_moves, remaining_draw_cards%3, 'draw_cards: ', draw_cards
 
@@ -821,12 +964,79 @@ def main():
 					if not_moved:
 						no_moves += 1
 					if no_moves == stop_crit:
-						i = 6
+						i_end = 6
 						end_moved_at_all = False
 						print aces.values()
 						print [x[-1] for x in aces.values()]
 						#print stack_cards
-						while i >= 0:
+						while i_end >= 0:
+
+							#check for stack_cards again
+							while all([x<=0 for x in sts]) and [dra_card[0] - 1,dra_card[1]] in [x[-1] for x in aces.values()]:
+								if draw_cards == 0:
+									pyautogui.moveTo(918 - 18 * (3 - 1) + left + 10,154 + up + 10)
+								else:
+									pyautogui.moveTo(918 - 18 * (3 - draw_cards) + left + 10,154 + up + 10)
+								pyautogui.click()
+								time.sleep(0.1)
+								pyautogui.click()
+
+								#find color and add
+								aces[[x[0] for x in aces.values()].index([1,dra_card[1]])].append(dra_card)
+								remaining_draw_cards_tmp -= 1
+								draw_cards_used += 1
+								click = False
+								moved = True
+								if draw_cards != 0:
+									draw_cards -= 1
+								history.remove(dra_card)
+
+								if click or (triples == 0 and draw_cards == 0) or (cards_seen==draw_cards_used and cards_seen!=0):
+									pyautogui.moveTo(810 + left, 180 + up)
+									pyautogui.click()
+									triples += 1
+									#print 'in click: ', math.floor((remaining_draw_cards-1)/3.0), triples, math.floor((remaining_draw_cards-1)/3.0) > triples-1, remaining_draw_cards - (cards_seen)
+									if math.floor((remaining_draw_cards-1)/div) > triples-1:
+										if three_draw:
+											if remaining_draw_cards - (cards_seen) >= 3:
+												next_draw = 3
+											else:
+												next_draw = (remaining_draw_cards)%3 if (remaining_draw_cards)%3>0 else 3
+										else:
+											next_draw = 1
+										cards_seen += next_draw
+										draw_cards = next_draw
+										s = '#3: ', remaining_draw_cards,remaining_draw_cards_tmp, cards_seen, next_draw, 'not last one'
+										#print s
+										#tex.insert(tk.END, s)
+										#tex.see(tk.END)
+										time.sleep(sleep_time_draw)
+										
+									elif math.floor((remaining_draw_cards-1)/div) == triples-1:
+										time.sleep(0.32)
+										pyautogui.moveTo(810 + left, 180 + up)
+										pyautogui.click()
+										rounds += 1
+										triples = 0
+										draw_cards_used = 0
+										remaining_draw_cards = remaining_draw_cards_tmp
+										if three_draw:
+											draw_cards = 3 if remaining_draw_cards_tmp >= 3 else remaining_draw_cards_tmp
+										else:
+											draw_cards = 1
+										cards_seen = draw_cards
+										s = '#2: ', remaining_draw_cards_tmp, draw_cards, 'first one'
+										#print s
+										#tex.insert(tk.END, s)
+										#tex.see(tk.END)
+										not_moved = True
+										time.sleep(sleep_time_draw)
+
+								dra_card, _ = draw_card(clf_cards,clf_color,draw_cards, counter_draws)
+
+							sorted_sts = [j[0] for j in sorted(enumerate(sts), key=lambda x:x[1])]
+							i = sorted_sts[i_end]
+
 							end_moved = False
 							card = stack_cards[i][-1]
 							print i, card, [card[0] - 1,card[1]] in [x[-1] for x in aces.values()]
@@ -854,11 +1064,11 @@ def main():
 								
 								end_moved = True
 								if sts[i] >= 0 and num_cards[i] == 0:
-									time.sleep(sleep_time)
+									time.sleep(sleep_time_stack)
 									im=ImageGrab.grab(bbox=((i*(card_width+stack_)) + 337 + left,268 + 4*sts[i] + up,(i*(card_width+stack_))+337 + card_width + left,4*sts[i] + 268 + card_height + up))
 									img = im.convert('L')
 									img = np.asarray(img)
-									im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
+									#im.convert('RGB').save("solitaire/debug/second2%s.jpg"%str(counter_second))
 									stack_cards[i] = [[clf_cards.predict(img[2:,:-4].flatten().reshape(1, -1))[0], clf_color.predict(img[2:,:-4].flatten().reshape(1, -1))[0]]]
 									np.savetxt("solitaire/debug/second2%s.txt"%str(counter_second), [stack_cards[i]], fmt='%s')
 									num_cards[i] = 1
@@ -869,10 +1079,10 @@ def main():
 									#num_cards[i] = 0
 
 							if end_moved:
-								i = 6
+								i_end = 6
 								end_moved_at_all = True
 							else:
-								i -= 1
+								i_end -= 1
 							print 'end_moved_at_all: ', end_moved_at_all
 						if not end_moved_at_all:
 							print 'stopping because two rouds not moved'
@@ -885,8 +1095,9 @@ def main():
 				if remaining_draw_cards_tmp == 0 and all([x<=0 for x in sts]):
 					print 'won'
 					exit(-1)
+				if remaining_draw_cards_tmp == 0:
+					print 'are we getting here in this case?'
 			#print history
-			print aces
 			if moved:
 				not_moved = False
 
@@ -908,3 +1119,33 @@ if __name__ == '__main__':
 	#tex.see(tk.END)
 	#raw_input()
 	main()
+
+#TODO:
+# (-) what if there are no draw cards left
+# (!) line 254, in main,     just_numbers = [x[-1][0] for x in stack_cards.values()] IndexError: list index out of range
+# if two kings take the one that frees downcard
+# but if king is there and can free downcard don't wait another round
+# change order, we have do the last thing earlier in case it frees downcards
+# before click check cards again
+# two queens -> nothing even there were all kings
+# if almost done (for example nly one card on draw, just open)
+# if there's nothing to move first round on stacks it clicks on new draw
+# one time it seemed to be stuck - while loop?
+# if there's no card left in draw it seemed to be stuck in a loop
+# sometimes it still clicks on the wrong card to put on foundation
+# do we need to go through all draw_cards again after bringing cards to foundation?? did it make any difference?
+# if we wait for next king we have to save space to free place for king... -> if king goes on 10 and ten on Jack, we cant put other 10 on Jack
+# (?) sleep time shroter, just if 2d check again!
+# (?) if there's a 4 red on board, don't put 3 black on foundation if not protected, if it's better to put it on other stack
+# two black quuens and red king drawn and empty field but not playing king!
+# (/) if all(sts<1), play draw cards first -> faster
+# sometimes we can't put all cards on foundation because then draw cards can't go on stacks anymore (next protected), so when we do that we have to have an eye on drawcards
+
+
+# (?) = maybe fixed
+# (-) = probably fixed
+# (/) = probably still not fixed
+# (!) = fixed
+
+
+#why does it not play 4c (numcards==1, sts>0) if 3c is in aces

@@ -22,6 +22,7 @@ learn_classifier = True
 online = False
 
 def bet():
+	print 'bet'
 	pyautogui.moveTo(500 + left,490 + up)
 	time.sleep(0.1)
 	pyautogui.click(500 + left,490 + up)
@@ -37,6 +38,11 @@ def hit():# also newgame
 def stand():# also rebet, deal
 	print 'stand'
 	pyautogui.click(800 + left,600 + up)
+
+def split():
+	print 'split'
+	pyautogui.click(640 + left,610 + up)
+
 
 
 def grab_rect(clf):
@@ -62,12 +68,12 @@ def main():
 			imgs_dealer = []
 			imgs_player = []
 			imgs_result = []
-			for i in range(12):
+			for i in range(13):
 				#img = cv2.imread("cards/%s.jpg"%str(i))
 				img = misc.imread("blackjack/d%s.jpg"%str(i),mode='L')
 				imgs_dealer.append(img.flatten())
 			clf_dealer1 =  LinearSVC()
-			labels_dealer = range(12)
+			labels_dealer = range(13)
 			print 'dealer gathered', len(imgs_dealer), len(labels_dealer)
 			clf_dealer1.fit(imgs_dealer,labels_dealer)
 
@@ -112,7 +118,7 @@ def main():
 				else:
 					print 'won'
 					hit()
-					time.sleep(2.6)
+					time.sleep(1.0)
 					bet()
 					time.sleep(1.0)
 					stand()
@@ -122,6 +128,7 @@ def main():
 				stand()
 			elif r == 2:
 				print 'lost'
+				time.sleep(0.5)
 				prev_bet = 2*prev_bet
 				hit()
 				time.sleep(1.5)
@@ -129,22 +136,35 @@ def main():
 					print x, prev_bet
 					bet()
 					#bet()
-					time.sleep(0.6)
+					time.sleep(0.1)
 				stand()
-			time.sleep(3.5)
+			time.sleep(0.5)
 			#get dealer card
 			d = view_dealer(clf_dealer1)
+			time.sleep(0.5)
+			if d == 12:
+				pyautogui.click(770 + left,100 + up)
+				time.sleep(0.5)
+				hit()
+				time.sleep(1.0)
+				bet()
+				time.sleep(1.0)
+				stand()
+				prev_bet = 1
+				d = view_dealer(clf_dealer1)
+				time.sleep(0.5)
 			while d == 0:
-				print 'loop'
+				print 'loop', d
 				d = view_dealer(clf_dealer1)
 			cards = 2
+			print 'dealre: ', d
 			if d == 11:
 				r=2
 			else:
 
 				while clf_result1.predict(np.asarray(ImageGrab.grab(bbox=(510 + left,521 + up,540 + left,545 + up)).convert('L')).flatten().reshape(1, -1))[0] == 0:
 					im=ImageGrab.grab(bbox=(510 + left,521 + up,540 + left,545 + up)) # X1,Y1,X2,Y2
-					#im.save("blackjack/p%s.jpg"%str(counter_card_gods_of_odds))
+					im.save("blackjack/p%s.jpg"%str(counter_card_gods_of_odds))
 					im = im.convert('L')
 					im = np.asarray(im)
 					p = clf_player1.predict(im.flatten().reshape(1, -1))[0]
@@ -152,10 +172,11 @@ def main():
 					print d,p
 					#if double ace always split
 					if d == 1:
+						time.sleep(0.8)
 						if hit1:
 							hit()
 							hit1 = False
-						time.sleep(0.6)
+							time.sleep(1.8)
 						print 'player has ', p
 						if p < 17:
 							print '< 17'
@@ -167,7 +188,9 @@ def main():
 							print 'else'
 							stand()
 
-					if p < 10:
+					if p == 2:
+						split()
+					elif p < 10:
 						hit()
 					elif p == 10 and d <= 7:
 						if cards == 2:
@@ -194,16 +217,18 @@ def main():
 							double_down()
 						else:
 							hit()
+					elif p == 26 and d == 10:
+						hit()
 					elif p>21 and p<26 and d>=7:
 						hit()
 					elif p>=26 and p<29 and d<9:
 						stand()
-					elif p>21 and p<29 and d==9:
+					elif p>21 and p<28 and d==9:
 						hit()
+					elif p==28 or p==29 and d==9:
+						stand()
 					elif p>21 and p<29 and d==10:
 						stand()
-					elif p == 26 and d == 10:
-						hit()
 					elif d < 7:
 						stand()
 					elif p == 18 or p == 19 or p == 20:
@@ -213,11 +238,11 @@ def main():
 						exit(-1)
 
 					cards += 1
-					time.sleep(3.5)
+					time.sleep(0.9)
 
 				r = clf_result1.predict(np.asarray(ImageGrab.grab(bbox=(510 + left,521 + up,540 + left,545 + up)).convert('L')).flatten().reshape(1, -1))[0]
-				
-			time.sleep(5)
+			print r
+			time.sleep(1.4)
 			hit1 = True
 	except KeyboardInterrupt:
 		exit(-1)
